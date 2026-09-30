@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Funil de vendas completo: captura, página de vendas, checkout, upsell, downsell e página de obrigado.">
+<title>Funil Fermento Vivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: funil em 5 telas numa só página; barra do funil no topo, cada etapa é uma coluna estreita e focada em conversão. */
+:root{
+  --bg:#F7F7F4; --surface:#FFFFFF; --ink:#1F2421; --muted:#5E655F; --line:#DEDFD8;
+  --cobalt:#1F4FC4; --cobalt-ink:#FFFFFF; --cobalt-soft:#E6ECFB;
+  --rye:#C98A1B; --rye-soft:#FBF1DE; --ok:#227A4B; --ok-soft:#E3F3EA;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141715; --surface:#1C201D; --ink:#ECEDE8; --muted:#A2A9A2; --line:#2F3530;
+  --cobalt:#6F93F0; --cobalt-ink:#0E1426; --cobalt-soft:#1D2742;
+  --rye:#E8AE4A; --rye-soft:#2E2515; --ok:#5CC98C; --ok-soft:#16291E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141715; --surface:#1C201D; --ink:#ECEDE8; --muted:#A2A9A2; --line:#2F3530;
+  --cobalt:#6F93F0; --cobalt-ink:#0E1426; --cobalt-soft:#1D2742;
+  --rye:#E8AE4A; --rye-soft:#2E2515; --ok:#5CC98C; --ok-soft:#16291E; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:400 1.0625rem/1.6 var(--body);padding-inline:16px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+a{color:var(--cobalt)}
+.wrap{max-width:1040px;margin-inline:auto}
+.narrow{max-width:680px;margin-inline:auto}
+.stack{display:flex;flex-direction:column;gap:1rem}
+.eyebrow{font:500 .78rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rye)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--rye);outline-offset:2px}
+
+/* Barra do funil */
+.funnelbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin-inline:-16px;padding:.6rem 16px;background:var(--ink);color:var(--bg);font-size:.85rem}
+.funnelbar .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem}
+.funnelbar strong{font:500 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.steps{display:flex;flex-wrap:wrap;gap:.35rem;list-style:none;margin:0;padding:0}
+.steps button{font:600 .82rem var(--body);color:inherit;background:transparent;border:1px solid color-mix(in srgb,var(--bg) 30%,transparent);border-radius:99px;padding:.3rem .75rem;cursor:pointer}
+.steps button[aria-current="step"]{background:var(--rye);border-color:var(--rye);color:#1F2421}
+
+/* Botões e campos */
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:.5rem;font:700 1.05rem var(--body);padding:1rem 1.6rem;border-radius:10px;border:0;cursor:pointer;background:var(--cobalt);color:var(--cobalt-ink);text-decoration:none;transition:transform .15s,filter .15s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;color:var(--muted);font-weight:500;font-size:.95rem;text-decoration:underline;padding:.5rem}
+label{font-weight:600;font-size:.92rem;display:block;margin-bottom:.35rem}
+input[type=text],input[type=email],input[type=tel]{width:100%;font:inherit;padding:.8rem .9rem;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+input:focus{border-color:var(--cobalt);outline:none}
+.err{color:#C0392B;font-size:.88rem;min-height:1.2em}
+
+section.step{padding-block:2.5rem 4rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.5rem}
+
+/* 1. Captura */
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:2.5rem;align-items:center}
+.hero > *{min-width:0}
+.jar{width:100%;max-width:260px;margin-inline:auto;display:block}
+.jar .levain{transform-origin:bottom;animation:rise 4s ease-in-out infinite alternate}
+@keyframes rise{from{transform:scaleY(.55)}to{transform:scaleY(1)}}
+@media (prefers-reduced-motion: reduce){.jar .levain{animation:none}.btn{transition:none}}
+.facts{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{font:500 .8rem var(--mono);background:var(--rye-soft);color:var(--ink);border-radius:6px;padding:.3rem .55rem}
+
+/* 2. Vendas */
+.vsl{aspect-ratio:16/9;max-width:100%;border-radius:14px;background:var(--ink);color:var(--bg);display:grid;place-items:center;text-align:center;padding:1rem}
+.vsl .play{width:72px;height:72px;border-radius:50%;background:var(--rye);display:grid;place-items:center;margin:0 auto .75rem}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.grid3 > *,.grid2 > *{min-width:0}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.timeline li{display:grid;grid-template-columns:5.5rem 1fr;gap:1rem;padding:1rem 0;border-top:1px solid var(--line)}
+.timeline li:last-child{border-bottom:1px solid var(--line)}
+.timeline .t{font:500 .85rem var(--mono);color:var(--cobalt);padding-top:.15rem}
+.quote{font-size:.98rem}
+.quote footer{margin-top:.75rem;font-weight:600;font-size:.9rem}
+.tag-example{display:inline-block;font:500 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--rye-soft);color:var(--rye);padding:.2rem .45rem;border-radius:4px}
+.offer{border:2px solid var(--cobalt);background:var(--surface);border-radius:16px;padding:2rem 1.5rem;text-align:center}
+.offer ul{list-style:none;padding:0;margin:1.25rem 0;text-align:left;display:grid;gap:.55rem}
+.offer li{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px dashed var(--line);padding-bottom:.5rem}
+.offer li span:last-child{font-family:var(--mono);color:var(--muted);white-space:nowrap}
+.price-old{font-family:var(--mono);color:var(--muted);text-decoration:line-through}
+.price{font:800 clamp(2.4rem,8vw,3.4rem)/1 var(--display);color:var(--cobalt);font-variant-numeric:tabular-nums}
+.guarantee{display:flex;gap:1.25rem;align-items:center}
+.seal{flex:none;width:88px;height:88px;border-radius:50%;border:3px double var(--ok);color:var(--ok);display:grid;place-items:center;text-align:center;font:700 .78rem/1.1 var(--display)}
+details{border-bottom:1px solid var(--line);padding:.9rem 0}
+summary{cursor:pointer;font-weight:600}
+details p{margin-top:.6rem;color:var(--muted)}
+
+/* 3. Checkout */
+.checkout{display:grid;grid-template-columns:1.3fr .9fr;gap:1.5rem;align-items:start}
+.checkout > *{min-width:0}
+.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.pay input{position:absolute;opacity:0}
+.pay label{margin:0;border:1.5px solid var(--line);border-radius:8px;padding:.75rem .5rem;text-align:center;cursor:pointer;font-weight:600;background:var(--surface)}
+.pay input:checked + label{border-color:var(--cobalt);background:var(--cobalt-soft)}
+.pay input:focus-visible + label{outline:3px solid var(--rye)}
+.bump{border:2px dashed var(--rye);background:var(--rye-soft);border-radius:10px;padding:1rem;display:flex;gap:.75rem;align-items:flex-start}
+.bump input{width:1.3rem;height:1.3rem;flex:none;margin-top:.2rem;accent-color:var(--cobalt)}
+.bump label{margin:0;font-weight:400}
+.summary-row{display:flex;justify-content:space-between;gap:1rem;padding:.4rem 0}
+.summary-row.total{border-top:1px solid var(--line);margin-top:.5rem;padding-top:.8rem;font-weight:700;font-size:1.15rem}
+.note{font-size:.85rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:.75rem}
+
+/* 4. Upsell / 5. Obrigado */
+.alert{background:var(--ok-soft);color:var(--ok);border-radius:10px;padding:.8rem 1rem;font-weight:600;text-align:center}
+.upsell{text-align:center}
+.check-list{list-style:none;padding:0;margin:0;display:grid;gap:.6rem;text-align:left}
+.check-list li{padding-left:1.8rem;position:relative}
+.check-list li::before{content:"";position:absolute;left:0;top:.35rem;width:1.1rem;height:1.1rem;border-radius:50%;background:var(--ok-soft);border:2px solid var(--ok)}
+
+footer.site{border-top:1px solid var(--line);padding-block:1.5rem;font-size:.85rem;color:var(--muted);text-align:center}
+
+@media (max-width:760px){
+  .hero,.checkout{grid-template-columns:1fr}
+  .grid3,.grid2{grid-template-columns:1fr}
+  .jar{max-width:180px}
+  .timeline li{grid-template-columns:1fr;gap:.2rem}
+}
+</style>
+</head>
+<body>
+
+<nav class="funnelbar" aria-label="Etapas do funil">
+  <div class="wrap">
+    <strong>Visão do funil</strong>
+    <ol class="steps" id="steps">
+      <li><button type="button" data-go="captura">1 · Captura</button></li>
+      <li><button type="button" data-go="vendas">2 · Vendas</button></li>
+      <li><button type="button" data-go="checkout">3 · Checkout</button></li>
+      <li><button type="button" data-go="upsell">4 · Upsell</button></li>
+      <li><button type="button" data-go="downsell">4b · Downsell</button></li>
+      <li><button type="button" data-go="obrigado">5 · Obrigado</button></li>
+    </ol>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ============ 1. CAPTURA ============ -->
+<section class="step" id="captura">
+  <div class="hero">
+    <div class="stack">
+      <span class="eyebrow">Aula gratuita · 42 minutos</span>
+      <h1>Seu primeiro pão de fermentação natural com casca que estala</h1>
+      <p class="muted">Aprenda a criar o fermento do zero e a assar um pão aberto e crocante na panela de ferro que você já tem em casa. Sem máquina, sem fermento de pacote.</p>
+      <div class="facts" aria-label="O que você vai ver na aula">
+        <span class="chip">Hidratação 72%</span>
+        <span class="chip">Levain 1:5:5</span>
+        <span class="chip">Bancada a 24 °C</span>
+        <span class="chip">Forno 250 °C</span>
+      </div>
+      <form class="panel stack" id="leadForm" novalidate>
+        <div>
+          <label for="lead-nome">Seu nome</label>
+          <input type="text" id="lead-nome" autocomplete="given-name" placeholder="Como quer ser chamado(a)">
+        </div>
+        <div>
+          <label for="lead-email">Seu melhor e-mail</label>
+          <input type="email" id="lead-email" autocomplete="email" placeholder="voce@email.com">
+        </div>
+        <p class="err" id="leadErr" aria-live="polite"></p>
+        <button class="btn block" type="submit">Quero a aula gratuita</button>
+        <p class="muted" style="font-size:.82rem">Enviamos a aula e o PDF com a tabela de hidratação. Você pode sair da lista quando quiser.</p>
+      </form>
+    </div>
+    <svg class="jar" viewBox="0 0 200 280" role="img" aria-label="Pote de vidro com fermento natural crescendo">
+      <rect x="55" y="10" width="90" height="26" rx="6" fill="var(--rye)"/>
+      <path d="M40 48 Q40 36 52 36 H148 Q160 36 160 48 V250 Q160 270 140 270 H60 Q40 270 40 250Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="4"/>
+      <g class="levain">
+        <path d="M44 120 Q70 108 100 118 T156 116 V250 Q156 266 140 266 H60 Q44 266 44 250Z" fill="var(--rye-soft)" stroke="var(--rye)" stroke-width="2"/>
+        <circle cx="70" cy="170" r="6" fill="var(--surface)" stroke="var(--rye)" stroke-width="2"/>
+        <circle cx="118" cy="150" r="4" fill="var(--surface)" stroke="var(--rye)" stroke-width="2"/>
+        <circle cx="96" cy="205" r="8" fill="var(--surface)" stroke="var(--rye)" stroke-width="2"/>
+        <circle cx="132" cy="225" r="5" fill="var(--surface)" stroke="var(--rye)" stroke-width="2"/>
+        <circle cx="64" cy="235" r="4" fill="var(--surface)" stroke="var(--rye)" stroke-width="2"/>
+      </g>
+      <line x1="164" y1="120" x2="176" y2="120" stroke="var(--muted)" stroke-width="2"/>
+      <text x="178" y="124" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--muted)">2×</text>
+      <line x1="164" y1="190" x2="176" y2="190" stroke="var(--muted)" stroke-width="2"/>
+      <text x="178" y="194" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--muted)">1×</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ 2. VENDAS ============ -->
+<section class="step" id="vendas" hidden>
+  <div class="narrow stack" style="gap:1.25rem;text-align:center">
+    <span class="eyebrow" id="salesHello">Sua aula está liberada</span>
+    <h1>Do pote de fermento ao pão de padaria em 21 dias</h1>
+    <p class="muted">O Método Fermento Vivo é o passo a passo completo para você fazer pão de fermentação natural toda semana, com resultado previsível, mesmo morando em cidade quente.</p>
+    <div class="vsl" role="img" aria-label="Espaço para o vídeo de vendas">
+      <div>
+        <div class="play" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z" fill="#1F2421"/></svg></div>
+        <p style="font-weight:600">Seu vídeo de vendas entra aqui</p>
+        <p style="opacity:.7;font-size:.88rem">Cole o link do YouTube, Vimeo ou Panda Video</p>
+      </div>
+    </div>
+    <button class="btn" data-go="checkout">Quero entrar no Método · R$ 197</button>
+  </div>
+
+  <div class="stack" style="margin-top:4rem;gap:1.5rem">
+    <h2 class="narrow" style="text-align:center">Se isso acontece na sua cozinha, o método é para você</h2>
+    <div class="grid3">
+      <div class="panel stack"><h3>O fermento não cresce</h3><p class="muted">Você alimenta todo dia e ele continua parado no pote, ou cheira a acetona.</p></div>
+      <div class="panel stack"><h3>O pão sai achatado</h3><p class="muted">A massa espalha na assadeira e o miolo fica fechado e pesado.</p></div>
+      <div class="panel stack"><h3>Cada receita diz uma coisa</h3><p class="muted">Horários, pesos e temperaturas que não funcionam no clima brasileiro.</p></div>
+    </div>
+  </div>
+
+  <div class="narrow stack" style="margin-top:4rem;gap:1.25rem">
+    <span class="eyebrow">O que tem dentro</span>
+    <h2>Um ciclo completo de fornada, dividido em 6 módulos</h2>
+    <ol class="timeline">
+      <li><span class="t">Dias 1–7</span><div><h3>Criando o fermento</h3><p class="muted">Farinha, água e temperatura. Como saber que ele está pronto pelo teste de flutuação.</p></div></li>
+      <li><span class="t">Dia 8</span><div><h3>Alimentação e rotina</h3><p class="muted">Proporção 1:5:5, geladeira e como encaixar tudo numa semana de trabalho.</p></div></li>
+      <li><span class="t">09h00</span><div><h3>Autólise e mistura</h3><p class="muted">Hidratação de 68% a 78% e como escolher a certa para a sua farinha.</p></div></li>
+      <li><span class="t">10h00</span><div><h3>Dobras e fermentação</h3><p class="muted">Leitura da massa: aumento de volume, bolhas na borda e o teste do dedo.</p></div></li>
+      <li><span class="t">15h00</span><div><h3>Modelagem e retardo</h3><p class="muted">Tensão de superfície, banneton improvisado e 12 horas na geladeira.</p></div></li>
+      <li><span class="t">Dia seguinte</span><div><h3>Forno e pestana</h3><p class="muted">Panela de ferro a 250 °C, vapor, cortes e a hora certa de tirar a tampa.</p></div></li>
+    </ol>
+  </div>
+
+  <div class="stack" style="margin-top:4rem;gap:1.5rem">
+    <div class="narrow" style="text-align:center"><span class="tag-example">Exemplos · troque pelos depoimentos reais dos seus alunos</span></div>
+    <div class="grid3">
+      <blockquote class="panel quote" style="margin:0"><p>“Espaço para um depoimento real sobre o primeiro pão que deu certo.”</p><footer>Nome do aluno · Cidade</footer></blockquote>
+      <blockquote class="panel quote" style="margin:0"><p>“Espaço para um depoimento real sobre o fermento que finalmente cresceu.”</p><footer>Nome do aluno · Cidade</footer></blockquote>
+      <blockquote class="panel quote" style="margin:0"><p>“Espaço para um depoimento real, de preferência com foto do miolo.”</p><footer>Nome do aluno · Cidade</footer></blockquote>
+    </div>
+  </div>
+
+  <div class="narrow" style="margin-top:4rem">
+    <div class="offer stack" id="oferta">
+      <span class="eyebrow">Tudo o que você recebe</span>
+      <ul>
+        <li><span>Método Fermento Vivo · 6 módulos</span><span>R$ 297</span></li>
+        <li><span>Bônus: planilha de hidratação e horários</span><span>R$ 67</span></li>
+        <li><span>Bônus: 10 receitas (integral, centeio, focaccia)</span><span>R$ 97</span></li>
+        <li><span>Comunidade de alunos por 1 ano</span><span>R$ 36</span></li>
+      </ul>
+      <p><span class="price-old">De R$ 497</span></p>
+      <p class="price">R$ 197</p>
+      <p class="muted">ou 12x de R$ 20,37 no cartão</p>
+      <button class="btn block" data-go="checkout">Garantir minha vaga</button>
+      <p class="muted" style="font-size:.85rem">Acesso imediato por 1 ano · Pagamento seguro</p>
+    </div>
+  </div>
+
+  <div class="narrow panel guarantee" style="margin-top:2rem">
+    <div class="seal">7 dias<br>de garantia</div>
+    <div class="stack" style="gap:.4rem"><h3>Teste o método por 7 dias</h3><p class="muted">Se não gostar, peça o reembolso dentro de 7 dias e devolvemos 100% do valor, como prevê o Código de Defesa do Consumidor.</p></div>
+  </div>
+
+  <div class="narrow" style="margin-top:4rem">
+    <h2 style="margin-bottom:1rem">Perguntas frequentes</h2>
+    <details><summary>Preciso de batedeira ou forno especial?</summary><p>Não. Você usa as mãos, uma tigela e uma panela de ferro ou de barro com tampa, no forno comum.</p></details>
+    <details><summary>Funciona com farinha de supermercado?</summary><p>Sim. O módulo 3 mostra como ajustar a hidratação para as farinhas mais comuns no Brasil.</p></details>
+    <details><summary>Por quanto tempo tenho acesso?</summary><p>Por 1 ano a partir da compra, com todas as atualizações.</p></details>
+    <details><summary>Como recebo o acesso?</summary><p>Logo após a confirmação do pagamento, você recebe o login por e-mail. No Pix, a liberação é imediata.</p></details>
+  </div>
+  <div style="text-align:center;margin-top:2rem"><button class="btn" data-go="checkout">Quero entrar no Método</button></div>
+</section>
+
+<!-- ============ 3. CHECKOUT ============ -->
+<section class="step" id="checkout" hidden>
+  <div class="checkout">
+    <form class="panel stack" id="checkoutForm" novalidate>
+      <span class="eyebrow">Passo 1 de 2 · Seus dados</span>
+      <h2>Finalize sua inscrição</h2>
+      <div><label for="co-nome">Nome completo</label><input type="text" id="co-nome" autocomplete="name"></div>
+      <div><label for="co-email">E-mail para receber o acesso</label><input type="email" id="co-email" autocomplete="email"></div>
+      <div><label for="co-fone">WhatsApp</label><input type="tel" id="co-fone" autocomplete="tel" placeholder="(11) 90000-0000"></div>
+      <span class="eyebrow" style="margin-top:.5rem">Passo 2 de 2 · Pagamento</span>
+      <div class="pay" role="radiogroup" aria-label="Forma de pagamento">
+        <input type="radio" name="pay" id="pay-pix" value="Pix" checked><label for="pay-pix">Pix</label>
+        <input type="radio" name="pay" id="pay-card" value="Cartão"><label for="pay-card">Cartão</label>
+        <input type="radio" name="pay" id="pay-boleto" value="Boleto"><label for="pay-boleto">Boleto</label>
+      </div>
+      <p class="note" id="payNote">No Pix, o QR Code aparece na próxima tela e o acesso é liberado na hora.</p>
+      <div class="bump">
+        <input type="checkbox" id="bump">
+        <label for="bump"><strong>Sim, quero o Guia de Farinhas Brasileiras por + R$ 27.</strong> Tabela com 14 farinhas nacionais, proteína de cada uma e a hidratação indicada. Só nesta página.</label>
+      </div>
+      <p class="err" id="coErr" aria-live="polite"></p>
+      <button class="btn block" type="submit" id="payBtn">Pagar R$ 197,00</button>
+      <p class="note">Modelo de checkout. Para vender de verdade, conecte este botão ao checkout da sua plataforma de pagamento (Hotmart, Kiwify, Eduzz, Mercado Pago ou Stripe). Esta página não processa pagamentos.</p>
+    </form>
+    <aside class="panel">
+      <h3 style="margin-bottom:.75rem">Resumo do pedido</h3>
+      <div class="summary-row"><span>Método Fermento Vivo</span><span class="mono">R$ 197,00</span></div>
+      <div class="summary-row" id="bumpRow" hidden><span>Guia de Farinhas</span><span class="mono">R$ 27,00</span></div>
+      <div class="summary-row total"><span>Total</span><span class="mono" id="coTotal">R$ 197,00</span></div>
+      <ul class="check-list" style="margin-top:1.25rem;font-size:.92rem">
+        <li>Acesso imediato por 1 ano</li>
+        <li>Garantia de 7 dias</li>
+        <li>Suporte pela comunidade</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 4. UPSELL ============ -->
+<section class="step" id="upsell" hidden>
+  <div class="narrow stack upsell" style="gap:1.25rem">
+    <p class="alert">Pedido recebido. Não feche esta página: tem uma oferta só para quem acabou de entrar.</p>
+    <span class="eyebrow">Oferta única · aparece só agora</span>
+    <h1>Asse junto comigo em 4 encontros ao vivo</h1>
+    <p class="muted">Na Mentoria Fornada, você manda a foto do seu pão e eu analiso miolo, casca e pestana ao vivo, em grupo de até 30 alunos.</p>
+    <ul class="check-list panel">
+      <li>4 encontros de 90 minutos pelo Zoom, um por semana</li>
+      <li>Correção individual da sua fornada</li>
+      <li>Gravações disponíveis por 1 ano</li>
+    </ul>
+    <p><span class="price-old">De R$ 597</span></p>
+    <p class="price">R$ 297</p>
+    <p class="muted">Adicionado ao mesmo pagamento, sem digitar nada de novo</p>
+    <button class="btn block" id="upYes">Sim, quero a mentoria</button>
+    <button class="btn ghost" data-go="downsell">Não, obrigado. Prefiro aprender sozinho(a).</button>
+  </div>
+</section>
+
+<!-- ============ 4b. DOWNSELL ============ -->
+<section class="step" id="downsell" hidden>
+  <div class="narrow stack upsell" style="gap:1.25rem">
+    <span class="eyebrow">Espere · uma alternativa mais leve</span>
+    <h1>Fique só com as gravações da mentoria</h1>
+    <p class="muted">Sem os encontros ao vivo, mas com as 4 aulas gravadas da última turma e todas as correções comentadas.</p>
+    <p class="price">R$ 97</p>
+    <button class="btn block" id="downYes">Sim, quero as gravações</button>
+    <button class="btn ghost" id="downNo">Não, quero ir para o meu acesso</button>
+  </div>
+</section>
+
+<!-- ============ 5. OBRIGADO ============ -->
+<section class="step" id="obrigado" hidden>
+  <div class="narrow stack" style="gap:1.25rem">
+    <p class="alert">Inscrição confirmada</p>
+    <h1 id="thanksTitle">Bem-vindo(a) ao Método Fermento Vivo</h1>
+    <p class="muted">Enviamos o acesso para <strong id="thanksEmail">seu e-mail</strong>. Se não aparecer em 5 minutos, olhe a caixa de spam ou promoções.</p>
+    <div class="panel">
+      <h3 style="margin-bottom:.75rem">Seu pedido</h3>
+      <div id="orderLines"></div>
+      <div class="summary-row total"><span>Total</span><span class="mono" id="orderTotal"></span></div>
+      <p class="muted" style="font-size:.9rem;margin-top:.5rem">Forma de pagamento: <span id="orderPay"></span></p>
+    </div>
+    <div class="panel stack">
+      <h3>Seus próximos passos</h3>
+      <ol style="margin:0;padding-left:1.2rem;display:grid;gap:.5rem">
+        <li>Abra o e-mail de acesso e crie sua senha.</li>
+        <li>Separe farinha integral, água filtrada e um pote de vidro de 500 ml.</li>
+        <li>Assista ao módulo 1 hoje e comece o fermento: ele leva 7 dias.</li>
+      </ol>
+    </div>
+    <button class="btn ghost" data-go="captura">Recomeçar a demonstração do funil</button>
+  </div>
+</section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">Método Fermento Vivo · CNPJ 00.000.000/0001-00 · Termos de uso · Política de privacidade</div>
+</footer>
+
+<script>
+(function(){
+  const ids=["captura","vendas","checkout","upsell","downsell","obrigado"];
+  const brl=v=>"R$ "+v.toFixed(2).replace(".",",");
+  const state={nome:"",email:"",pay:"Pix",items:[{n:"Método Fermento Vivo",v:197}]};
+  try{const s=JSON.parse(localStorage.getItem("fv-lead")||"null");if(s){state.nome=s.nome||"";state.email=s.email||"";}}catch(e){}
+
+  function go(id,push){
+    if(!ids.includes(id)) id="captura";
+    ids.forEach(s=>document.getElementById(s).hidden=(s!==id));
+    document.querySelectorAll("#steps button").forEach(b=>{
+      if(b.dataset.go===id) b.setAttribute("aria-current","step"); else b.removeAttribute("aria-current");
+    });
+    if(id==="vendas") document.getElementById("salesHello").textContent=state.nome?state.nome+", sua aula está liberada":"Sua aula está liberada";
+    if(id==="checkout"){
+      if(state.nome && !document.getElementById("co-nome").value) document.getElementById("co-nome").value=state.nome;
+      if(state.email && !document.getElementById("co-email").value) document.getElementById("co-email").value=state.email;
+    }
+    if(id==="obrigado") renderThanks();
+    if(push!==false && location.hash!=="#"+id) history.replaceState(null,"","#"+id);
+    window.scrollTo({top:0});
+  }
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(b){e.preventDefault();go(b.dataset.go);}});
+  window.addEventListener("hashchange",()=>go(location.hash.slice(1),false));
+
+  const validEmail=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+  document.getElementById("leadForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    const nome=document.getElementById("lead-nome").value.trim();
+    const email=document.getElementById("lead-email").value.trim();
+    const err=document.getElementById("leadErr");
+    if(!nome){err.textContent="Digite seu nome para receber a aula.";return;}
+    if(!validEmail(email)){err.textContent="Confira o e-mail: ele precisa ter @ e um domínio, como voce@email.com.";return;}
+    err.textContent="";
+    state.nome=nome.split(" ")[0];state.email=email;
+    try{localStorage.setItem("fv-lead",JSON.stringify({nome:state.nome,email}));}catch(e){}
+    go("vendas");
+  });
+
+  const bump=document.getElementById("bump");
+  const notes={"Pix":"No Pix, o QR Code aparece na próxima tela e o acesso é liberado na hora.","Cartão":"Parcele em até 12x. Os dados do cartão são digitados no checkout seguro da sua plataforma de pagamento.","Boleto":"O boleto vence em 2 dias úteis. O acesso é liberado após a compensação."};
+  function updateTotal(){
+    const t=197+(bump.checked?27:0);
+    document.getElementById("bumpRow").hidden=!bump.checked;
+    document.getElementById("coTotal").textContent=brl(t);
+    document.getElementById("payBtn").textContent="Pagar "+brl(t);
+  }
+  bump.addEventListener("change",updateTotal);
+  document.querySelectorAll('input[name="pay"]').forEach(r=>r.addEventListener("change",()=>{document.getElementById("payNote").textContent=notes[r.value];}));
+
+  document.getElementById("checkoutForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    const nome=document.getElementById("co-nome").value.trim();
+    const email=document.getElementById("co-email").value.trim();
+    const err=document.getElementById("coErr");
+    if(!nome){err.textContent="Digite seu nome completo.";return;}
+    if(!validEmail(email)){err.textContent="Confira o e-mail: é para ele que enviamos o acesso.";return;}
+    err.textContent="";
+    state.nome=nome.split(" ")[0];state.email=email;
+    state.pay=document.querySelector('input[name="pay"]:checked').value;
+    state.items=[{n:"Método Fermento Vivo",v:197}];
+    if(bump.checked) state.items.push({n:"Guia de Farinhas Brasileiras",v:27});
+    go("upsell");
+  });
+
+  document.getElementById("upYes").addEventListener("click",()=>{state.items.push({n:"Mentoria Fornada (ao vivo)",v:297});go("obrigado");});
+  document.getElementById("downYes").addEventListener("click",()=>{state.items.push({n:"Gravações da Mentoria",v:97});go("obrigado");});
+  document.getElementById("downNo").addEventListener("click",()=>go("obrigado"));
+
+  function renderThanks(){
+    document.getElementById("thanksTitle").textContent=state.nome?"Bem-vindo(a), "+state.nome+"!":"Bem-vindo(a) ao Método Fermento Vivo";
+    document.getElementById("thanksEmail").textContent=state.email||"seu e-mail";
+    const box=document.getElementById("orderLines");box.innerHTML="";
+    state.items.forEach(i=>{const d=document.createElement("div");d.className="summary-row";d.innerHTML="<span></span><span class='mono'></span>";d.children[0].textContent=i.n;d.children[1].textContent=brl(i.v);box.appendChild(d);});
+    document.getElementById("orderTotal").textContent=brl(state.items.reduce((a,i)=>a+i.v,0));
+    document.getElementById("orderPay").textContent=state.pay;
+  }
+
+  updateTotal();
+  go(location.hash.slice(1)||"captura",false);
+})();
+</script>
+</body>
+</html>
